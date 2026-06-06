@@ -2,7 +2,7 @@ services:
   - type: web
     name: aves-sonoras
     env: docker
-    plan: free
+    plan: starter
     autoDeployTrigger: commit
     healthCheckPath: /api/health
     dockerfilePath: ./Dockerfile
