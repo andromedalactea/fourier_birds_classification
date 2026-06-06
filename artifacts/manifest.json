@@ -4,5 +4,7 @@
   "selected_model": "ExtraTreesClassifier",
   "accuracy": 0.606,
   "top3_accuracy": 0.777,
-  "trained_at": "2026-06-06"
+  "trained_at": "2026-06-06",
+  "deploy_n_estimators": 80,
+  "deploy_note": "Model shrunk for Render free/starter (512MB RAM)"
 }

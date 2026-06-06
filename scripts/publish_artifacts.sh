@@ -4,13 +4,21 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="${ROOT}/develop-eggs/artifacts"
 DEST="${ROOT}/artifacts"
+DEPLOY_ESTIMATORS="${DEPLOY_ESTIMATORS:-80}"
+if [[ -z "${PYTHON:-}" ]]; then
+  if [[ -x "${ROOT}/.venv/bin/python" ]]; then
+    PYTHON="${ROOT}/.venv/bin/python"
+  else
+    PYTHON="python3"
+  fi
+fi
 
-FILES=(
+REQUIRED=(
   "bird_fft_model.joblib"
   "species_label_encoder.json"
 )
 
-for file in "${FILES[@]}"; do
+for file in "${REQUIRED[@]}"; do
   if [[ ! -f "${SRC}/${file}" ]]; then
     echo "Missing source file: ${SRC}/${file}" >&2
     echo "Train first: ./.venv/bin/python scripts/train_bird_fft_classifier.py train" >&2
@@ -19,18 +27,23 @@ for file in "${FILES[@]}"; do
 done
 
 mkdir -p "${DEST}"
-cp "${SRC}/bird_fft_model.joblib" "${DEST}/"
 cp "${SRC}/species_label_encoder.json" "${DEST}/"
+
+echo "Shrinking model for deploy (${DEPLOY_ESTIMATORS} trees, ~180MB RAM)..."
+"${PYTHON}" "${ROOT}/scripts/shrink_model.py" \
+  --input "${SRC}/bird_fft_model.joblib" \
+  --output "${DEST}/bird_fft_model.joblib" \
+  --n-estimators "${DEPLOY_ESTIMATORS}"
 
 METRICS="${SRC}/metrics.json"
 MANIFEST="${DEST}/manifest.json"
 if [[ -f "${METRICS}" ]]; then
-  python3 - "${METRICS}" "${MANIFEST}" <<'PY'
+  "${PYTHON}" - "${METRICS}" "${MANIFEST}" "${DEPLOY_ESTIMATORS}" <<'PY'
 import json
 import sys
 from datetime import date
 
-metrics_path, manifest_path = sys.argv[1:3]
+metrics_path, manifest_path, deploy_estimators = sys.argv[1:4]
 with open(metrics_path, encoding="utf-8") as handle:
     metrics = json.load(handle)
 
@@ -48,6 +61,8 @@ manifest.update(
             metrics.get("top3_accuracy", manifest.get("top3_accuracy", 0)), 3
         ),
         "trained_at": date.today().isoformat(),
+        "deploy_n_estimators": int(deploy_estimators),
+        "deploy_note": "Model shrunk for Render free/starter (512MB RAM)",
     }
 )
 manifest.setdefault("version", "1.0.0")

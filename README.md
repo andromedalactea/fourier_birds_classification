@@ -138,4 +138,4 @@ El repo incluye `render.yaml` (plan **free**, sin disco persistente).
 4. Render construye el `Dockerfile` (frontend + API + artefactos) y expone la app en un solo dominio.
 5. Verifica `GET /api/health` → `model_loaded: true`, `n_species: 30`.
 
-**Nota:** el modelo ocupa ~205 MB en disco y memoria al cargarse. Si el plan free queda corto de RAM, sube a un plan con más memoria.
+**Memoria en Render:** Free y Starter tienen **512 MB RAM** (Starter no da más RAM que Free). El modelo completo entrenado (~500 árboles, ~540 MB en RAM) no cabe ahí. `publish_artifacts.sh` publica una versión reducida (**80 árboles, ~5 MB, ~180 MB RAM**) para el plan free. Para el modelo completo en producción usa el plan **Standard** (2 GB RAM) y publica sin reducir: `DEPLOY_ESTIMATORS=500 ./scripts/publish_artifacts.sh`.

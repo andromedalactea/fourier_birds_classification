@@ -10,7 +10,6 @@ from pathlib import Path
 import joblib
 import numpy as np
 
-from lib.audio_features import audio_to_feature
 
 DEFAULT_ARTIFACTS_DIR = "artifacts"
 DEFAULT_MODEL_FILE = "bird_fft_model.joblib"
@@ -110,6 +109,8 @@ class BirdPredictor:
         return len(self.classes)
 
     def predict(self, audio_path: str, top_k: int = 5) -> PredictionResult:
+        from lib.audio_features import audio_to_feature
+
         config = self.feature_config
         feature = audio_to_feature(
             audio_path=audio_path,
