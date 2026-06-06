@@ -1,0 +1,28 @@
+# Local / training
+develop-eggs/
+.venv/
+venv/
+xeno_canto_data/
+
+# Frontend dev
+web/node_modules/
+web/dist/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Git / IDE
+.git/
+.gitignore
+.cursor/
+.vscode/
+*.md
+!README.md
+
+# Env secrets
+.env
+.env.*

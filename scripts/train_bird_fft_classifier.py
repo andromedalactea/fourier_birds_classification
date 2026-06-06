@@ -699,7 +699,7 @@ def parse_args():
     train_parser.add_argument("--retries", type=int, default=3)
     train_parser.add_argument("--test-size", type=float, default=0.2)
     train_parser.add_argument("--seed", type=int, default=42)
-    train_parser.add_argument("--artifacts-dir", default="artifacts")
+    train_parser.add_argument("--artifacts-dir", default="develop-eggs/artifacts")
     train_parser.add_argument("--save-manual-test-audios", type=int, default=0)
     train_parser.add_argument(
         "--manual-test-dir", default="artifacts/manual_test_audios"
@@ -719,7 +719,7 @@ def parse_args():
     quick_parser.add_argument("--retries", type=int, default=3)
     quick_parser.add_argument("--test-size", type=float, default=0.2)
     quick_parser.add_argument("--seed", type=int, default=42)
-    quick_parser.add_argument("--artifacts-dir", default="artifacts")
+    quick_parser.add_argument("--artifacts-dir", default="develop-eggs/artifacts")
     quick_parser.add_argument("--save-manual-test-audios", type=int, default=0)
     quick_parser.add_argument(
         "--manual-test-dir", default="artifacts/manual_test_audios"

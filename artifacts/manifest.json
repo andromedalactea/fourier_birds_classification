@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "n_species": 30,
+  "selected_model": "ExtraTreesClassifier",
+  "accuracy": 0.606,
+  "top3_accuracy": 0.777,
+  "trained_at": "2026-06-06"
+}

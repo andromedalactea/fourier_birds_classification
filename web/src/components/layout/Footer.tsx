@@ -1,4 +1,5 @@
 import { Info } from 'lucide-react'
+import { DeveloperCredits } from './DeveloperCredits'
 
 export function Footer() {
   return (
@@ -13,13 +14,16 @@ export function Footer() {
             </p>
             <p>
               Reconoce <strong>30 especies</strong> de la región entrenada en Colombia.
-              Precisión aproximada: 60% (78% en top 3).
+              Precisión aproximada: 60% (78% en top 3). Usa el botón{' '}
+              <strong>Ver especies</strong> en la cabecera para consultar el catálogo completo.
             </p>
             <p className="text-xs text-foreground/50">
               Datos de entrenamiento: Xeno-Canto · Modelo: ExtraTreesClassifier
             </p>
           </div>
         </div>
+
+        <DeveloperCredits />
       </div>
     </footer>
   )

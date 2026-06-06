@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: aves-sonoras
+    env: docker
+    plan: free
+    autoDeployTrigger: commit
+    healthCheckPath: /api/health
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: ARTIFACTS_DIR
+        value: artifacts

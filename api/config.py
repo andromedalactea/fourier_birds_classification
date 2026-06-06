@@ -1,8 +1,20 @@
+import json
 import os
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_MODEL_PATH = PROJECT_ROOT / "develop-eggs/artifacts/bird_fft_model.joblib"
+
+# Central artifacts directory — swap models by replacing files here or overriding env vars.
+DEFAULT_ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
+ARTIFACTS_DIR = Path(os.getenv("ARTIFACTS_DIR", str(DEFAULT_ARTIFACTS_DIR)))
+if not ARTIFACTS_DIR.is_absolute():
+    ARTIFACTS_DIR = PROJECT_ROOT / ARTIFACTS_DIR
+
+DEFAULT_MODEL_PATH = ARTIFACTS_DIR / "bird_fft_model.joblib"
+DEFAULT_SPECIES_PATH = ARTIFACTS_DIR / "species_label_encoder.json"
+DEFAULT_MANIFEST_PATH = ARTIFACTS_DIR / "manifest.json"
+DEFAULT_STATIC_DIR = PROJECT_ROOT / "web" / "dist"
+
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 
 CORS_ORIGINS = [
@@ -11,6 +23,25 @@ CORS_ORIGINS = [
     if origin.strip()
 ]
 
-MODEL_PATH = Path(os.getenv("MODEL_PATH", str(DEFAULT_MODEL_PATH)))
-if not MODEL_PATH.is_absolute():
-    MODEL_PATH = PROJECT_ROOT / MODEL_PATH
+
+def _resolve_path(env_name: str, default: Path) -> Path:
+    value = os.getenv(env_name)
+    if not value:
+        return default
+    path = Path(value)
+    if not path.is_absolute():
+        path = PROJECT_ROOT / path
+    return path
+
+
+MODEL_PATH = _resolve_path("MODEL_PATH", DEFAULT_MODEL_PATH)
+SPECIES_PATH = _resolve_path("SPECIES_PATH", DEFAULT_SPECIES_PATH)
+MANIFEST_PATH = _resolve_path("MANIFEST_PATH", DEFAULT_MANIFEST_PATH)
+STATIC_DIR = _resolve_path("STATIC_DIR", DEFAULT_STATIC_DIR)
+
+
+def load_manifest() -> dict | None:
+    if not MANIFEST_PATH.exists():
+        return None
+    with MANIFEST_PATH.open(encoding="utf-8") as handle:
+        return json.load(handle)

@@ -6,6 +6,7 @@ import { AudioPreview } from './components/audio/AudioPreview'
 import { Footer } from './components/layout/Footer'
 import { Header } from './components/layout/Header'
 import { InstallPrompt } from './components/layout/InstallPrompt'
+import { SpeciesCatalog } from './components/species/SpeciesCatalog'
 import { HeroSection } from './components/hero/HeroSection'
 import { PredictionResults } from './components/results/PredictionResults'
 import { Button } from './components/ui/Button'
@@ -17,6 +18,7 @@ import { checkHealth } from './lib/api'
 function App() {
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [apiOnline, setApiOnline] = useState<boolean | null>(null)
+  const [speciesOpen, setSpeciesOpen] = useState(false)
 
   const recorder = useAudioRecorder()
   const { result, error, isLoading, predict, reset } = usePredict()
@@ -65,7 +67,8 @@ function App() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 pb-8">
-        <Header />
+        <Header onOpenSpecies={() => setSpeciesOpen(true)} />
+        <SpeciesCatalog open={speciesOpen} onClose={() => setSpeciesOpen(false)} />
         <InstallPrompt />
         <HeroSection />
 
