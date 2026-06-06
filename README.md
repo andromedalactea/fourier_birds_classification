@@ -55,11 +55,16 @@ cd web && npm install
 
 ### Actualizar el modelo o las especies
 
-1. Entrena o copia los nuevos archivos en `artifacts/`:
-   - `bird_fft_model.joblib`
-   - `species_label_encoder.json` (debe coincidir con las clases del modelo)
-2. Actualiza `artifacts/manifest.json` (versión, métricas, `n_species`).
-3. Haz commit y push — Render redespliega automáticamente.
+1. Entrena localmente (salida en `develop-eggs/artifacts/`):
+   ```bash
+   ./.venv/bin/python scripts/train_bird_fft_classifier.py train
+   ```
+2. Publica a la carpeta versionada:
+   ```bash
+   ./scripts/publish_artifacts.sh
+   ```
+3. Revisa y, si aplica, sube `version` en `artifacts/manifest.json`.
+4. Haz commit y push — Render redespliega automáticamente.
 
 También puedes apuntar a otra carpeta sin mover archivos:
 
@@ -126,12 +131,11 @@ El repo incluye `render.yaml` (plan **free**, sin disco persistente).
 1. Sube el repo a GitHub con Git LFS habilitado:
    ```bash
    git lfs install
-   git add .gitattributes artifacts/
-   git commit -m "Add deployment artifacts"
-   git push
+   git push origin main
    ```
-2. En [Render](https://render.com), crea un **Blueprint** desde el repo o conecta el servicio web.
-3. Render construye el `Dockerfile` (frontend + API + artefactos) y expone la app en un solo dominio.
-4. El health check usa `GET /api/health`.
+2. En [Render](https://render.com), crea un **Blueprint** desde el repo (lee `render.yaml`).
+3. En el servicio, activa **Git LFS** (Settings) para que el build descargue el `.joblib` real.
+4. Render construye el `Dockerfile` (frontend + API + artefactos) y expone la app en un solo dominio.
+5. Verifica `GET /api/health` → `model_loaded: true`, `n_species: 30`.
 
 **Nota:** el modelo ocupa ~205 MB en disco y memoria al cargarse. Si el plan free queda corto de RAM, sube a un plan con más memoria.
