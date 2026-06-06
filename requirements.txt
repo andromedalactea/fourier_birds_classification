@@ -1,0 +1,14 @@
+# Core ML / signal processing (train_bird_fft_classifier.py)
+numpy==2.4.6
+scipy==1.17.1
+scikit-learn==1.9.0
+joblib==1.5.3
+librosa==0.11.0
+
+# Audio I/O (MP3 downloads from get_data_birds.py; librosa.load)
+soundfile==0.13.1
+audioread==3.1.0
+
+# API access and config (both scripts)
+requests==2.34.2
+python-dotenv==1.2.2

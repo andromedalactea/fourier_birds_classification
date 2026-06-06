@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import sys
 import tempfile
 from collections import Counter, defaultdict
 from datetime import datetime, UTC
@@ -13,7 +14,6 @@ import numpy as np
 import requests
 from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
-from scipy.signal import stft
 from sklearn.ensemble import ExtraTreesClassifier, RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
@@ -27,6 +27,13 @@ except ImportError as exc:
         "Missing dependency 'librosa'. Install required packages with:\n"
         "  ./.venv/bin/pip install librosa scipy scikit-learn joblib python-dotenv requests"
     ) from exc
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from lib.audio_features import audio_to_feature  # noqa: E402
+from lib.predictor import BirdPredictor  # noqa: E402
 
 
 load_dotenv(override=True)
@@ -299,160 +306,6 @@ def save_manual_test_audios(
     manifest_path.write_text(json.dumps(saved, indent=2), encoding="utf-8")
     log(f"Manual-test manifest saved: {manifest_path}")
     return saved
-
-
-def summarize_bands(array_2d, n_bands=32):
-    splits = np.array_split(array_2d, n_bands, axis=0)
-    return np.array([chunk.mean() for chunk in splits], dtype=np.float32)
-
-
-def summarize_series(values):
-    return np.array(
-        [
-            float(np.mean(values)),
-            float(np.std(values)),
-            float(np.min(values)),
-            float(np.max(values)),
-        ],
-        dtype=np.float32,
-    )
-
-
-def extract_fourier_features(
-    waveform, sample_rate, n_fft=1024, hop_length=512, n_bands=32
-):
-    _, _, zxx = stft(
-        waveform,
-        fs=sample_rate,
-        nperseg=n_fft,
-        noverlap=n_fft - hop_length,
-        boundary=None,
-        padded=False,
-    )
-    if zxx.size == 0:
-        raise ValueError("Could not compute STFT for this audio.")
-
-    magnitude = np.abs(zxx) + 1e-10
-    log_magnitude = np.log1p(magnitude)
-
-    band_mean = summarize_bands(log_magnitude, n_bands=n_bands)
-    band_var = summarize_bands((log_magnitude - log_magnitude.mean(axis=1, keepdims=True)) ** 2, n_bands=n_bands)
-
-    freqs = np.linspace(0.0, sample_rate / 2.0, magnitude.shape[0], dtype=np.float32)
-    frame_energy = magnitude.sum(axis=0) + 1e-10
-    centroid = (freqs[:, None] * magnitude).sum(axis=0) / frame_energy
-
-    cumsum_mag = np.cumsum(magnitude, axis=0)
-    roll_threshold = 0.85 * frame_energy
-    roll_indices = np.argmax(cumsum_mag >= roll_threshold[None, :], axis=0)
-    rolloff = freqs[roll_indices]
-
-    flatness = np.exp(np.mean(np.log(magnitude), axis=0)) / np.mean(magnitude, axis=0)
-
-    extra_stats = np.concatenate(
-        [
-            summarize_series(centroid),
-            summarize_series(rolloff),
-            summarize_series(flatness),
-            summarize_series(frame_energy),
-        ],
-        dtype=np.float32,
-    )
-
-    return np.concatenate([band_mean, band_var, extra_stats], dtype=np.float32)
-
-
-def extract_rich_audio_features(
-    waveform,
-    sample_rate,
-    n_fft=1024,
-    hop_length=512,
-    n_mfcc=20,
-):
-    stft_features = extract_fourier_features(
-        waveform=waveform,
-        sample_rate=sample_rate,
-        n_fft=n_fft,
-        hop_length=hop_length,
-        n_bands=32,
-    )
-
-    mfcc = librosa.feature.mfcc(
-        y=waveform,
-        sr=sample_rate,
-        n_mfcc=n_mfcc,
-        n_fft=n_fft,
-        hop_length=hop_length,
-    )
-    delta = librosa.feature.delta(mfcc)
-    delta2 = librosa.feature.delta(mfcc, order=2)
-
-    def feature_stats(matrix):
-        return np.concatenate(
-            [
-                np.mean(matrix, axis=1),
-                np.std(matrix, axis=1),
-            ],
-            dtype=np.float32,
-        )
-
-    centroid = librosa.feature.spectral_centroid(
-        y=waveform, sr=sample_rate, n_fft=n_fft, hop_length=hop_length
-    )
-    bandwidth = librosa.feature.spectral_bandwidth(
-        y=waveform, sr=sample_rate, n_fft=n_fft, hop_length=hop_length
-    )
-    rolloff = librosa.feature.spectral_rolloff(
-        y=waveform, sr=sample_rate, n_fft=n_fft, hop_length=hop_length
-    )
-    flatness = librosa.feature.spectral_flatness(
-        y=waveform, n_fft=n_fft, hop_length=hop_length
-    )
-    zcr = librosa.feature.zero_crossing_rate(y=waveform, hop_length=hop_length)
-
-    spectral_summary = np.array(
-        [
-            float(np.mean(centroid)),
-            float(np.std(centroid)),
-            float(np.mean(bandwidth)),
-            float(np.std(bandwidth)),
-            float(np.mean(rolloff)),
-            float(np.std(rolloff)),
-            float(np.mean(flatness)),
-            float(np.std(flatness)),
-            float(np.mean(zcr)),
-            float(np.std(zcr)),
-        ],
-        dtype=np.float32,
-    )
-
-    return np.concatenate(
-        [
-            stft_features,
-            feature_stats(mfcc),
-            feature_stats(delta),
-            feature_stats(delta2),
-            spectral_summary,
-        ],
-        dtype=np.float32,
-    )
-
-
-def audio_to_feature(audio_path, sample_rate, clip_seconds):
-    log(
-        f"Decoding and resampling audio. path={audio_path}, "
-        f"sample_rate={sample_rate}, clip_seconds={clip_seconds}"
-    )
-    waveform, _ = librosa.load(
-        audio_path, sr=sample_rate, mono=True, duration=clip_seconds
-    )
-    if waveform.size == 0:
-        raise ValueError("Decoded waveform is empty.")
-
-    peak = np.max(np.abs(waveform))
-    if peak > 0:
-        waveform = waveform / peak
-    return extract_rich_audio_features(waveform, sample_rate=sample_rate)
 
 
 def build_feature_dataset(records, session, timeout, sample_rate, clip_seconds):
@@ -800,30 +653,17 @@ def run_train(args):
 
 def run_predict(args):
     log(f"Starting predict command with args: {vars(args)}")
-    bundle = joblib.load(args.model_path)
-    model = bundle["model"]
-    classes = bundle["classes"]
-    config = bundle["feature_config"]
+    predictor = BirdPredictor(model_path=args.model_path)
     log(
-        f"Loaded model bundle from {args.model_path}. "
-        f"classes={len(classes)}, feature_config={config}"
+        f"Loaded model bundle from {predictor.model_path}. "
+        f"classes={predictor.n_species}, feature_config={predictor.feature_config}"
     )
 
-    feature = audio_to_feature(
-        audio_path=args.audio_path,
-        sample_rate=config["sample_rate"],
-        clip_seconds=config["clip_seconds"],
-    )
-    log(f"Feature extraction for inference complete. feature_dim={feature.shape[0]}")
-    probabilities = model.predict_proba(feature.reshape(1, -1))[0]
-    sorted_idx = np.argsort(probabilities)[::-1][: args.top_k]
-
+    result = predictor.predict(audio_path=args.audio_path, top_k=args.top_k)
+    log(f"Feature extraction for inference complete. feature_dim={result.feature_dim}")
     log(f"Predictions for: {args.audio_path}")
-    for rank, idx in enumerate(sorted_idx, start=1):
-        class_id = int(model.classes_[idx])
-        species = classes[class_id]
-        score = float(probabilities[idx])
-        log(f"{rank}. {species}  (p={score:.4f})")
+    for pred in result.predictions:
+        log(f"{pred.rank}. {pred.species}  (p={pred.probability:.4f})")
 
 
 def run_quick_test(args):
