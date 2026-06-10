@@ -100,6 +100,24 @@ curl -X POST "http://127.0.0.1:8000/api/predict?top_k=5" \
   -F "audio=@ruta/al/audio.mp3"
 ```
 
+### Espectros de Fourier por especie
+
+La comparación visual de espectros (panel "Huella de Fourier" en la web) usa
+`artifacts/species_spectra.json`: el espectro promedio normalizado (128 bandas,
+0–11.025 kHz) y los picos de frecuencia dominantes de cada especie, calculados
+con las mismas grabaciones de Xeno-Canto del entrenamiento.
+
+Para regenerarlo (por ejemplo, tras reentrenar el modelo):
+
+```bash
+./.venv/bin/python scripts/build_species_spectra.py --records-per-species 4
+# añade --force para recalcular especies ya existentes
+```
+
+El script es reanudable (guarda progreso tras cada especie). La API expone los
+espectros en la respuesta de `POST /api/predict` (campo `spectrum`) y en
+`GET /api/spectra?species=A,B`.
+
 ### CLI de predicción (sin API)
 
 ```bash

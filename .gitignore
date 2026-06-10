@@ -1,5 +1,6 @@
 # Custom
 xeno_canto_data/
+lib/__pycache__/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

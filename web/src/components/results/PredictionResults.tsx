@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { animateResultsCards } from '../../lib/animations'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import type { PredictionResponse } from '../../types/prediction'
+import { SpectrumComparePanel } from '../spectrum/SpectrumComparePanel'
 import { SpeciesCard } from './SpeciesCard'
 
 interface PredictionResultsProps {
@@ -37,6 +38,14 @@ export function PredictionResults({ result, onNewSearch }: PredictionResultsProp
           </div>
         ) : null}
       </div>
+
+      {result.spectrum &&
+      (result.spectrum.audio || Object.keys(result.spectrum.species).length > 0) ? (
+        <SpectrumComparePanel
+          spectrum={result.spectrum}
+          predictions={result.predictions}
+        />
+      ) : null}
 
       <div className="space-y-3">
         <h3 className="font-heading text-lg font-semibold text-foreground">

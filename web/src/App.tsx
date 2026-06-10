@@ -1,6 +1,5 @@
 import { Search } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { registerSW } from 'virtual:pwa-register'
 import { AudioInputTabs } from './components/audio/AudioInputTabs'
 import { AudioPreview } from './components/audio/AudioPreview'
 import { Footer } from './components/layout/Footer'
@@ -22,10 +21,6 @@ function App() {
 
   const recorder = useAudioRecorder()
   const { result, error, isLoading, predict, reset } = usePredict()
-
-  useEffect(() => {
-    registerSW({ immediate: true })
-  }, [])
 
   useEffect(() => {
     checkHealth().then(setApiOnline)

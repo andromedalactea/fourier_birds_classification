@@ -60,6 +60,7 @@ class PredictionResult:
     feature_dim: int
     clip_seconds: float
     sample_rate: int
+    audio_spectrum: dict | None = None
 
 
 class BirdPredictor:
@@ -108,7 +109,12 @@ class BirdPredictor:
     def n_species(self) -> int:
         return len(self.classes)
 
-    def predict(self, audio_path: str, top_k: int = 5) -> PredictionResult:
+    def predict(
+        self,
+        audio_path: str,
+        top_k: int = 5,
+        include_spectrum: bool = False,
+    ) -> PredictionResult:
         from lib.audio_features import audio_to_feature
 
         config = self.feature_config
@@ -117,6 +123,16 @@ class BirdPredictor:
             sample_rate=config["sample_rate"],
             clip_seconds=config["clip_seconds"],
         )
+
+        audio_spectrum: dict | None = None
+        if include_spectrum:
+            from lib.spectrum import audio_to_spectrum
+
+            audio_spectrum = audio_to_spectrum(
+                audio_path,
+                sample_rate=config["sample_rate"],
+                clip_seconds=config["clip_seconds"],
+            ).to_dict()
         probabilities = self.model.predict_proba(feature.reshape(1, -1))[0]
         sorted_idx = np.argsort(probabilities)[::-1][:top_k]
 
@@ -138,4 +154,5 @@ class BirdPredictor:
             feature_dim=int(feature.shape[0]),
             clip_seconds=float(config["clip_seconds"]),
             sample_rate=int(config["sample_rate"]),
+            audio_spectrum=audio_spectrum,
         )

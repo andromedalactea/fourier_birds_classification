@@ -13,6 +13,7 @@ if not ARTIFACTS_DIR.is_absolute():
 DEFAULT_MODEL_PATH = ARTIFACTS_DIR / "bird_fft_model.joblib"
 DEFAULT_SPECIES_PATH = ARTIFACTS_DIR / "species_label_encoder.json"
 DEFAULT_MANIFEST_PATH = ARTIFACTS_DIR / "manifest.json"
+DEFAULT_SPECTRA_PATH = ARTIFACTS_DIR / "species_spectra.json"
 DEFAULT_STATIC_DIR = PROJECT_ROOT / "web" / "dist"
 
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
@@ -37,6 +38,7 @@ def _resolve_path(env_name: str, default: Path) -> Path:
 MODEL_PATH = _resolve_path("MODEL_PATH", DEFAULT_MODEL_PATH)
 SPECIES_PATH = _resolve_path("SPECIES_PATH", DEFAULT_SPECIES_PATH)
 MANIFEST_PATH = _resolve_path("MANIFEST_PATH", DEFAULT_MANIFEST_PATH)
+SPECTRA_PATH = _resolve_path("SPECTRA_PATH", DEFAULT_SPECTRA_PATH)
 STATIC_DIR = _resolve_path("STATIC_DIR", DEFAULT_STATIC_DIR)
 
 
@@ -44,4 +46,11 @@ def load_manifest() -> dict | None:
     if not MANIFEST_PATH.exists():
         return None
     with MANIFEST_PATH.open(encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def load_species_spectra() -> dict | None:
+    if not SPECTRA_PATH.exists():
+        return None
+    with SPECTRA_PATH.open(encoding="utf-8") as handle:
         return json.load(handle)

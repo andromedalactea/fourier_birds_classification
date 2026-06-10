@@ -22,19 +22,38 @@ from api.config import (  # noqa: E402
     MANIFEST_PATH,
     MAX_UPLOAD_BYTES,
     MODEL_PATH,
+    SPECTRA_PATH,
     SPECIES_PATH,
     STATIC_DIR,
     load_manifest,
+    load_species_spectra,
 )
 from lib.predictor import BirdPredictor, format_species_display  # noqa: E402
 
 predictor: BirdPredictor | None = None
+species_spectra: dict | None = None
+_spectra_mtime: float | None = None
+
+
+def get_species_spectra() -> dict | None:
+    """Return cached species spectra, reloading when the file changes on disk."""
+    global species_spectra, _spectra_mtime
+    if not SPECTRA_PATH.exists():
+        species_spectra = None
+        _spectra_mtime = None
+        return None
+    mtime = SPECTRA_PATH.stat().st_mtime
+    if species_spectra is None or _spectra_mtime != mtime:
+        species_spectra = load_species_spectra()
+        _spectra_mtime = mtime
+    return species_spectra
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     global predictor
     predictor = BirdPredictor(model_path=MODEL_PATH, species_path=SPECIES_PATH)
+    get_species_spectra()
     yield
     predictor = None
 
@@ -78,9 +97,27 @@ class PredictionMeta(BaseModel):
     sample_rate: int
 
 
+class SpectrumPeak(BaseModel):
+    freq_hz: float
+    magnitude: float
+
+
+class SpectrumProfileModel(BaseModel):
+    spectrum: list[float]
+    peaks: list[SpectrumPeak]
+    freq_max_hz: float
+    n_bins: int
+
+
+class SpectrumComparison(BaseModel):
+    audio: SpectrumProfileModel | None
+    species: dict[str, SpectrumProfileModel]
+
+
 class PredictionResponse(BaseModel):
     predictions: list[PredictionItem]
     meta: PredictionMeta
+    spectrum: SpectrumComparison | None = None
 
 
 class SpeciesItem(BaseModel):
@@ -121,6 +158,34 @@ def list_species() -> SpeciesResponse:
     return SpeciesResponse(species=items, count=len(items))
 
 
+def _species_spectrum_profile(species: str) -> SpectrumProfileModel | None:
+    spectra = get_species_spectra()
+    if not spectra:
+        return None
+    entry = spectra.get("species", {}).get(species)
+    if not entry:
+        return None
+    return SpectrumProfileModel(
+        spectrum=entry["spectrum"],
+        peaks=[SpectrumPeak(**peak) for peak in entry["peaks"]],
+        freq_max_hz=float(spectra.get("freq_max_hz", 11025.0)),
+        n_bins=int(spectra.get("n_bins", len(entry["spectrum"]))),
+    )
+
+
+@app.get("/api/spectra", response_model=SpectrumComparison)
+def get_spectra(
+    species: str = Query(..., description="Comma-separated species identifiers"),
+) -> SpectrumComparison:
+    requested = [item.strip() for item in species.split(",") if item.strip()]
+    profiles = {
+        name: profile
+        for name in requested
+        if (profile := _species_spectrum_profile(name)) is not None
+    }
+    return SpectrumComparison(audio=None, species=profiles)
+
+
 @app.post("/api/predict", response_model=PredictionResponse)
 async def predict(
     audio: UploadFile = File(...),
@@ -148,7 +213,9 @@ async def predict(
             tmp.write(content)
             temp_path = tmp.name
 
-        result = predictor.predict(audio_path=temp_path, top_k=top_k)
+        result = predictor.predict(
+            audio_path=temp_path, top_k=top_k, include_spectrum=True
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=400,
@@ -162,6 +229,23 @@ async def predict(
     finally:
         if temp_path:
             Path(temp_path).unlink(missing_ok=True)
+
+    audio_profile: SpectrumProfileModel | None = None
+    if result.audio_spectrum:
+        audio_profile = SpectrumProfileModel(**result.audio_spectrum)
+
+    candidate_profiles = {
+        p.species: profile
+        for p in result.predictions
+        if (profile := _species_spectrum_profile(p.species)) is not None
+    }
+
+    spectrum: SpectrumComparison | None = None
+    if audio_profile or candidate_profiles:
+        spectrum = SpectrumComparison(
+            audio=audio_profile,
+            species=candidate_profiles,
+        )
 
     return PredictionResponse(
         predictions=[
@@ -178,6 +262,7 @@ async def predict(
             clip_seconds=result.clip_seconds,
             sample_rate=result.sample_rate,
         ),
+        spectrum=spectrum,
     )
 
 

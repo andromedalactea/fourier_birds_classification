@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22C55E"/>
+      <stop offset="1" stop-color="#15803D"/>
+    </linearGradient>
+    <linearGradient id="bird" x1="168" y1="136" x2="312" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#ECFDF5"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#14532D" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- FFT spectral bars (frequency domain) -->
+  <g opacity="0.58">
+    <rect x="118" y="372" width="16" height="36" rx="8" fill="#F0FDF4"/>
+    <rect x="142" y="352" width="16" height="56" rx="8" fill="#F0FDF4"/>
+    <rect x="166" y="334" width="16" height="74" rx="8" fill="#F0FDF4"/>
+    <rect x="190" y="318" width="16" height="90" rx="8" fill="#FDE68A"/>
+    <rect x="214" y="328" width="16" height="80" rx="8" fill="#F0FDF4"/>
+    <rect x="238" y="342" width="16" height="66" rx="8" fill="#F0FDF4"/>
+    <rect x="262" y="356" width="16" height="52" rx="8" fill="#F0FDF4"/>
+    <rect x="286" y="368" width="16" height="40" rx="8" fill="#F0FDF4"/>
+  </g>
+
+  <!-- Background sine waves (ambient Fourier field) -->
+  <g opacity="0.2">
+    <path d="M72 360 C112 320 152 400 192 360 S272 320 312 360 S392 400 432 360" stroke="#F0FDF4" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M88 388 C128 348 168 428 208 388 S288 348 328 388 S408 428 448 388" stroke="#BBF7D0" stroke-width="4" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- Cute singing bird -->
+  <g filter="url(#soft)">
+    <ellipse cx="228" cy="268" rx="78" ry="72" fill="url(#bird)"/>
+    <circle cx="262" cy="196" r="62" fill="url(#bird)"/>
+    <path d="M176 262 C148 278 138 312 162 304 C172 292 176 278 176 262 Z" fill="#059669" opacity="0.28"/>
+    <path d="M188 292 C156 304 144 334 168 322 C178 310 184 300 188 292 Z" fill="#059669" opacity="0.22"/>
+    <path d="M204 248 C188 268 192 302 224 312 C214 282 208 258 204 248 Z" fill="#059669" opacity="0.18"/>
+    <ellipse cx="248" cy="218" rx="14" ry="9" fill="#F97316" opacity="0.16"/>
+    <circle cx="282" cy="186" r="16" fill="#0F172A"/>
+    <circle cx="288" cy="180" r="6" fill="#F0FDF4"/>
+    <!-- Open beak (singing) -->
+    <path d="M316 198 L352 188 L316 210 Z" fill="#D97706"/>
+    <path d="M316 212 L348 222 L316 234 Z" fill="#B45309" opacity="0.85"/>
+  </g>
+
+  <!-- Fourier sine waves emanating from the bird's song -->
+  <g stroke-linecap="round" fill="none">
+    <path d="M352 188 C372 168 392 172 412 156 C432 140 452 148 472 132" stroke="#F0FDF4" stroke-width="9" opacity="0.82"/>
+    <path d="M352 200 C370 184 390 188 410 176 C430 164 450 170 468 158" stroke="#FDE68A" stroke-width="7" opacity="0.78"/>
+    <path d="M352 214 C368 202 388 206 406 198 C424 190 444 196 462 186" stroke="#BBF7D0" stroke-width="5.5" opacity="0.65"/>
+    <path d="M352 228 C366 220 384 224 400 218 C416 212 434 216 450 210" stroke="#F0FDF4" stroke-width="4" opacity="0.5"/>
+  </g>
+
+  <!-- Frequency peak dots linking song to spectrum -->
+  <g opacity="0.5">
+    <circle cx="198" cy="308" r="5" fill="#FDE68A"/>
+    <circle cx="214" cy="296" r="4" fill="#F0FDF4"/>
+    <circle cx="230" cy="302" r="3.5" fill="#F0FDF4"/>
+    <circle cx="246" cy="314" r="3" fill="#F0FDF4"/>
+  </g>
+
+  <!-- Musical sparkles -->
+  <circle cx="408" cy="176" r="7" fill="#FDE68A" opacity="0.9"/>
+  <circle cx="432" cy="204" r="5" fill="#FDE68A" opacity="0.65"/>
+  <path d="M388 156 L392 168 L404 168 L394 176 L398 188 L388 180 L378 188 L382 176 L372 168 L384 168 Z" fill="#FDE68A" opacity="0.85"/>
+</svg>
