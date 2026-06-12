@@ -1,9 +1,11 @@
-import { Sparkles } from 'lucide-react'
-import { useEffect } from 'react'
+import { MapPin, Sparkles } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { animateResultsCards } from '../../lib/animations'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import type { PredictionResponse } from '../../types/prediction'
+import { LocationPickerModal } from '../location/LocationPickerModal'
 import { SpectrumComparePanel } from '../spectrum/SpectrumComparePanel'
+import { Button } from '../ui/Button'
 import { SpeciesCard } from './SpeciesCard'
 
 interface PredictionResultsProps {
@@ -13,6 +15,7 @@ interface PredictionResultsProps {
 
 export function PredictionResults({ result, onNewSearch }: PredictionResultsProps) {
   const reducedMotion = useReducedMotion()
+  const [locationOpen, setLocationOpen] = useState(false)
   const top = result.predictions[0]
 
   useEffect(() => {
@@ -22,6 +25,12 @@ export function PredictionResults({ result, onNewSearch }: PredictionResultsProp
 
   return (
     <section className="space-y-5" aria-live="polite">
+      <LocationPickerModal
+        open={locationOpen}
+        onClose={() => setLocationOpen(false)}
+        speciesName={top?.display_name}
+      />
+
       <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
         <div className="flex items-center gap-2 text-primary">
           <Sparkles className="h-5 w-5" aria-hidden="true" />
@@ -38,6 +47,20 @@ export function PredictionResults({ result, onNewSearch }: PredictionResultsProp
           </div>
         ) : null}
       </div>
+
+      {top ? (
+        <div className="result-card flex justify-center">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => setLocationOpen(true)}
+            className="w-full border-primary/20 bg-card hover:border-primary/40 hover:bg-primary/5 sm:w-auto"
+          >
+            <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />
+            Marcar dónde lo escuché
+          </Button>
+        </div>
+      ) : null}
 
       {result.spectrum &&
       (result.spectrum.audio || Object.keys(result.spectrum.species).length > 0) ? (

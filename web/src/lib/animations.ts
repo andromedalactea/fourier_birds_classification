@@ -106,6 +106,42 @@ export function animateSpeciesItems(
   return () => animation.pause()
 }
 
+export function animateModalOpen(
+  modal: HTMLElement,
+  reducedMotion: boolean,
+): (() => void) | undefined {
+  if (reducedMotion) return undefined
+
+  const animation = animate(modal, {
+    opacity: [0, 1],
+    scale: [0.96, 1],
+    translateY: [16, 0],
+    duration: 320,
+    ease: 'outCubic',
+  })
+
+  return () => animation.pause()
+}
+
+export function animateSaveSuccess(
+  element: HTMLElement,
+  reducedMotion: boolean,
+): (() => void) | undefined {
+  if (reducedMotion) {
+    element.style.opacity = '1'
+    return undefined
+  }
+
+  const animation = animate(element, {
+    opacity: [0, 1],
+    scale: [0.6, 1],
+    duration: 450,
+    ease: 'outBack',
+  })
+
+  return () => animation.pause()
+}
+
 export function startRecordingRipple(
   selector: string,
   reducedMotion: boolean,
